@@ -31,6 +31,10 @@ public class ScreenScraper {
     }
   }
 
+  public Robot getBot() {
+    return bot;
+  }
+
   public static boolean isAboutSameColor(int rgbA, int rgbB) {
     return isAboutSameColor(rgbA, rgbB, THRESHOLD);
   }
@@ -122,13 +126,15 @@ public class ScreenScraper {
   }
 
   private boolean isImageAt(BufferedImage image, BufferedImage bi, int i, int j, int w, int h) {
+    if (i + w >= bi.getWidth() || j + h >= bi.getHeight()) {
+      return false;
+    }
+
     int x, y;
     for (x = 0; x < w; x++) {
       for (y = 0; y < h; y++) {
         if (!isAboutSameColor(bi.getRGB(i + x, y + j), image.getRGB(x, y))) {
           return false;
-        } else {
-          // System.out.println(x+" "+y);
         }
       }
     }

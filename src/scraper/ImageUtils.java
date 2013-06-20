@@ -6,7 +6,7 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
-public class ImageUtils {
+class ImageUtils {
 
   public static BufferedImage load(String name) {
     InputStream is = ImageUtils.class.getResourceAsStream(name);

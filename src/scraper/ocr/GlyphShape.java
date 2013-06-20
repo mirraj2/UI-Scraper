@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class CharacterShape {
+public class GlyphShape {
 
   private int minX = Integer.MAX_VALUE / 2;
   private int maxX = -1;
@@ -108,13 +108,13 @@ public class CharacterShape {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof CharacterShape)) {
+    if (!(obj instanceof GlyphShape)) {
       return false;
     }
     return obj.hashCode() == this.hashCode();
   }
 
-  public double getLikenessScore(CharacterShape s) {
+  public double getLikenessScore(GlyphShape s) {
     double score = 0;
 
     int w = s.maxX - s.minX;

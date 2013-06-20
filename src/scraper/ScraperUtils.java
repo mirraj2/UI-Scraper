@@ -11,7 +11,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import scraper.WindowsAPI.StringNameCallback;
-import scraper.internal.Clock;
 
 public class ScraperUtils {
 
@@ -35,9 +34,9 @@ public class ScraperUtils {
       logger.debug("sleep 400");
       HumanInteraction.sleep(400);
       logger.debug("scraper call");
-      Clock.in("getLocationOfImage");
+      // Clock.in("getLocationOfImage");
       Rectangle loc = scraper.getLocationOf(image, imageArea, debug);
-      Clock.out();
+      // Clock.out();
       if (loc != null) {
         logger.debug("Found image!");
         return loc;

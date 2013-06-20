@@ -35,18 +35,18 @@ public class OCR {
 
     try {
       for (int i = 0; i < image.getWidth(); i++) {
-        CharacterShape shape =
-            generateCharacterShape(image, i, backgroundColor.getRGB(), antialias);
+        GlyphShape shape = generateCharacterShape(image, i, backgroundColor.getRGB(), antialias);
         if (shape != null) {
-          char letter = oFont.getCharacter(shape);
-          ret.append(letter);
+          String letter = oFont.getString(shape);
+          if (letter != null) {
+            ret.append(letter);
+          }
           i = shape.getMaxX() + 1;
         }
       }
     } catch (Exception e) {
       try {
-        ImageIO.write(image, "png", new File("C:\\DATA_DATA\\dump\\" + System.currentTimeMillis()
-            + ".png"));
+        ImageIO.write(image, "png", new File("C:\\dump\\" + System.currentTimeMillis() + ".png"));
       } catch (IOException e1) {
         e1.printStackTrace();
       }
@@ -56,28 +56,28 @@ public class OCR {
     return ret.toString();
   }
 
-  public static CharacterShape generateCharacterShape(BufferedImage image, int startingX,
+  public static GlyphShape generateCharacterShape(BufferedImage image, int startingX,
       int backgroundRGB, boolean antialias) {
     BackgroundComparator bgComparator = new BackgroundComparator(backgroundRGB, antialias);
     int barHeight = (int) (image.getHeight() * .5);
     for (int i = startingX; i < image.getWidth(); i++) {
       int rgb = image.getRGB(i, barHeight);
       if (!bgComparator.isBackground(rgb)) {
-        CharacterShape shape = findShape(image, i, barHeight, bgComparator);
+        GlyphShape shape = findShape(image, i, barHeight, bgComparator);
         return shape;
       }
     }
     return null;
   }
 
-  private static CharacterShape findShape(BufferedImage bi, int startX, int startY,
+  private static GlyphShape findShape(BufferedImage bi, int startX, int startY,
       BackgroundComparator bgComparator) {
     Queue<Point> queue = new LinkedList<Point>();
     Point firstPoint = new Point(startX, startY);
     queue.add(firstPoint);
     HashSet<Point> pointsSeen = new HashSet<Point>();
     pointsSeen.add(firstPoint);
-    CharacterShape ret = new CharacterShape();
+    GlyphShape ret = new GlyphShape();
     while (!queue.isEmpty()) {
       Point p = queue.poll();
       ret.addPixel(p);
