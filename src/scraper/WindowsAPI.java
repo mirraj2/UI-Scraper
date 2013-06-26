@@ -68,7 +68,11 @@ public final class WindowsAPI {
   }
 
   public static void setNormal(TargetWindow window) {
-    write("setnormal " + window.getID());
+    setNormal(window.getID());
+  }
+
+  public static void setNormal(int windowID) {
+    write("setnormal " + windowID);
   }
 
   public static void setNormal(StringNameCallback callback) {

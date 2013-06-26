@@ -31,12 +31,8 @@ public class ScraperUtils {
     logger.debug("Searching for image....");
     long time = System.currentTimeMillis();
     while (true) {
-      logger.debug("sleep 400");
       HumanInteraction.sleep(400);
-      logger.debug("scraper call");
-      // Clock.in("getLocationOfImage");
       Rectangle loc = scraper.getLocationOf(image, imageArea, debug);
-      // Clock.out();
       if (loc != null) {
         logger.debug("Found image!");
         return loc;

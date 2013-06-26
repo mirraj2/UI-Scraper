@@ -65,13 +65,13 @@ public final class HumanInteraction {
     sleep(pressSleepTime);
   }
 
-  public synchronized static void click(int x, int y) {
+  public synchronized static void click(double x, double y) {
     if (beNiceToUsers && userActive) {
       throw new UserActiveException();
     }
 
-    moveMouse(x - 1, y);
-    moveMouse(x, y);
+    moveMouse((int) x - 1, (int) y);
+    moveMouse((int) x, (int) y);
     robot.mousePress(InputEvent.BUTTON1_MASK);
     sleep(pressSleepTime);
     robot.mouseRelease(InputEvent.BUTTON1_MASK);
