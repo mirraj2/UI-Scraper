@@ -78,7 +78,7 @@ public final class HumanInteraction {
     sleep(pressSleepTime);
   }
 
-  public static void doubleClick(int x, int y) {
+  public static void doubleClick(double x, double y) {
     click(x, y);
     click(x, y);
   }
