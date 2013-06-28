@@ -1,270 +1,90 @@
 package scraper;
 
 import java.awt.Rectangle;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.WinDef.RECT;
+import com.sun.jna.win32.StdCallLibrary;
 import org.apache.log4j.Logger;
-import scraper.internal.FileUtils;
-import scraper.internal.OS;
 
-/**
- * This class requires the WindowsAPI.exe file.
- * 
- * @author jmirra
- * 
- */
 public final class WindowsAPI {
 
   @SuppressWarnings("unused")
   private static final Logger logger = Logger.getLogger(WindowsAPI.class);
 
-  private static final boolean DEBUG = false;
+  public static void sendToFront(TargetWindow window) {
+    Pointer p = Pointer.createConstant(window.getID());
+    User32.INSTANCE.ShowWindow(p, 1);
+    User32.INSTANCE.SetForegroundWindow(p);
+  }
 
-  private static Process process;
-  private static PrintStream output;
-  private static BufferedReader input;
+  public static TargetWindow findWindow(String windowName) {
+    return Iterables.getOnlyElement(findWindows(windowName));
+  }
 
-  static {
-    try {
-      File exeDir =
-          new File(OS.getLocalAppFolder("AMP" + File.separatorChar + "BrokerageDataServer"
-              + File.separatorChar + "executables"));
-      if (!exeDir.exists()) {
-        FileUtils.mkdirs(exeDir);
-      }
-      File exeFile = FileUtils.getChildFile(exeDir, "WindowsAPI.exe");
+  public static List<TargetWindow> findWindows(String windowName) {
+    final String searchString = windowName.toLowerCase();
 
-      if (!exeFile.exists()) {
-        // copy the executable out
-        logger.debug("Extracting WindowsAPI.exe...");
-        InputStream input = WindowsAPI.class.getResourceAsStream("WindowsAPI.exe");
-        FileUtils.transfer(input, exeFile, new byte[2048]);
-      }
+    final List<TargetWindow> ret = Lists.newArrayList();
 
-      process = Runtime.getRuntime().exec(exeFile.getPath());
-      output = new DebugPrintStream(process.getOutputStream());
-      input = new DebugBufferedReader(new InputStreamReader(process.getInputStream()));
-      readLine();
+    User32.INSTANCE.EnumWindows(new User32.WNDENUMPROC() {
+      public boolean callback(Pointer hWnd, Pointer userData) {
+        byte[] windowText = new byte[512];
+        User32.INSTANCE.GetWindowTextA(hWnd, windowText, 512);
+        String title = Native.toString(windowText).trim();
 
-      Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-        public void run() {
-          exit();
+        if (title.isEmpty()) {
+          return true;
         }
-      }));
 
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
+        if (!title.toLowerCase().contains(searchString)) {
+          return true;
+        }
 
-  public static void setNormal(TargetWindow window) {
-    setNormal(window.getID());
-  }
 
-  public static void setNormal(int windowID) {
-    write("setnormal " + windowID);
-  }
+        ret.add(new TargetWindow(Pointer.nativeValue(hWnd), title));
 
-  public static void setNormal(StringNameCallback callback) {
-    List<ListedFrame> list = getWindowIDs(callback);
-    for (ListedFrame frame : list) {
-      write("setnormal " + frame.id);
-    }
-  }
+        return true;
+      }
+    }, null);
 
-  public static void setLocation(int frameID, int x, int y) {
-    write("move " + frameID + " " + x + " " + y);
-  }
-
-  public static void setSize(int frameID, int width, int height) {
-    write("setsize " + frameID + " " + width + " " + height);
-  }
-
-  public static TargetWindow findWindow(StringNameCallback callback) {
-    List<TargetWindow> windows = findWindows(callback);
-    if (windows.size() == 0) {
-      return null;
-    }
-    if (windows.size() > 1) {
-      System.out.println("Warning, found multiple TargetWindows for findWindow() --> " + windows);
-    }
-    return windows.get(0);
-  }
-
-  public static List<TargetWindow> findWindows(StringNameCallback callback) {
-    List<ListedFrame> list = getWindowIDs(callback);
-    List<TargetWindow> ret = new ArrayList<TargetWindow>(list.size());
-    for (ListedFrame frame : list) {
-      write("getbounds " + frame.id);
-      String boundsString = readLine();
-      String[] m = boundsString.split(" ");
-      Rectangle bounds =
-          new Rectangle(Integer.valueOf(m[0]), Integer.valueOf(m[1]), Integer.valueOf(m[2]),
-              Integer.valueOf(m[3]));
-      ret.add(new TargetWindow(frame.id, frame.title, bounds));
-    }
     return ret;
   }
 
-  private static List<ListedFrame> getWindowIDs(StringNameCallback nameCallback) {
-    write("list");
-
-    List<ListedFrame> ret = new ArrayList<ListedFrame>();
-
-    while (true) {
-      String line = readLine();
-      if (line == null) {
-        return Collections.emptyList();
-      }
-      if (line.equals("!ENDLIST")) {
-        break;
-      }
-      int spaceIndex = line.indexOf(' ');
-      String title = line.substring(spaceIndex + 1);
-      if (nameCallback.isTargetString(title)) {
-        int id = Integer.valueOf(line.substring(0, spaceIndex - 1));
-        ret.add(new ListedFrame(id, title));
-      }
-    }
-    return ret;
+  public static Rectangle getBounds(TargetWindow targetWindow) {
+    RECT r = new RECT();
+    User32.INSTANCE.GetWindowRect(Pointer.createConstant(targetWindow.getID()), r);
+    Rectangle bounds = new Rectangle(r.left, r.top, r.right - r.left, r.bottom - r.top);
+    return bounds;
   }
 
-  private static void write(String s) {
-    output.println(s);
-    output.flush();
-  }
+  // Equivalent JNA mappings
+  public interface User32 extends StdCallLibrary {
+    User32 INSTANCE = (User32) Native.loadLibrary("user32", User32.class);
 
-  private static String readLine() {
-    try {
-      return input.readLine();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private WindowsAPI() {}
-
-  public static void exit() {
-    System.out.println("Exiting WindowsAPI");
-    process.destroy();
-  }
-
-  private static class DebugPrintStream extends PrintStream {
-
-    public DebugPrintStream(OutputStream out) {
-      super(out);
+    interface WNDENUMPROC extends StdCallCallback {
+      boolean callback(Pointer hWnd, Pointer arg);
     }
 
-    @Override
-    public void println(String x) {
-      if (DEBUG) {
-        System.out.println(x + " << WindowsAPI");
-      }
-      super.println(x);
-    }
+    boolean EnumWindows(WNDENUMPROC lpEnumFunc, Pointer arg);
 
-  }
+    int GetWindowTextA(Pointer hWnd, byte[] lpString, int nMaxCount);
+    
+    boolean GetWindowRect(Pointer hWnd, RECT rect);
+    
+    boolean SetForegroundWindow(Pointer hWnd);
 
-  private static class DebugBufferedReader extends BufferedReader {
-
-    public DebugBufferedReader(Reader in) {
-      super(in);
-    }
-
-    @Override
-    public String readLine() throws IOException {
-      String ret = super.readLine();
-      if (DEBUG) {
-        System.out.println("WindowsAPI >> " + ret);
-      }
-      return ret;
-    }
-
-  }
-
-  public static interface StringNameCallback {
-    public boolean isTargetString(String s);
-  }
-
-  public static class StandardWindowNameCallback implements StringNameCallback {
-
-    private final String targetWindowName;
-
-    public StandardWindowNameCallback(String windowName) {
-      if (windowName == null) {
-        throw new IllegalArgumentException("windowName cannot be null");
-      }
-      this.targetWindowName = windowName;
-    }
-
-    @Override
-    public boolean isTargetString(String windowName) {
-      return this.targetWindowName.equals(windowName);
-    }
-
-  }
-
-  public static class ContainsWindowNameCallback implements StringNameCallback {
-    private final String targetWindowName;
-
-    public ContainsWindowNameCallback(String windowName) {
-      if (windowName == null) {
-        throw new IllegalArgumentException("windowName cannot be null");
-      }
-      this.targetWindowName = windowName;
-    }
-
-    @Override
-    public boolean isTargetString(String windowName) {
-      return windowName.contains(this.targetWindowName);
-    }
-  }
-
-  public static class StartsWithWindowNameCallback implements StringNameCallback {
-
-    private final String targetWindowName;
-
-    public StartsWithWindowNameCallback(String windowName) {
-      if (windowName == null) {
-        throw new IllegalArgumentException("windowName cannot be null");
-      }
-      this.targetWindowName = windowName;
-    }
-
-    @Override
-    public boolean isTargetString(String windowName) {
-      return windowName.startsWith(targetWindowName);
-    }
-
-  }
-
-  private static class ListedFrame {
-    final int id;
-    final String title;
-
-    public ListedFrame(int id, String title) {
-      this.id = id;
-      this.title = title;
-    }
+    boolean ShowWindow(Pointer hWnd, int nCmdShow);
   }
 
   public static void main(String[] args) {
-    List<TargetWindow> windows = findWindows(new ContainsWindowNameCallback(""));
-    for (TargetWindow window : windows) {
-      if (window.getBounds().width > 800 && window.getBounds().height > 600) {
-        System.out.println(window.getTitle() + " -> " + window.getBounds());
-      }
-    }
+    // for (TargetWindow w : findWindows("Magic Online")) {
+    // sendToFront(w);
+    // }
   }
 
 }

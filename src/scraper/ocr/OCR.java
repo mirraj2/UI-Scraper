@@ -6,10 +6,8 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Queue;
 
 import javax.imageio.ImageIO;
@@ -35,7 +33,7 @@ public class OCR {
 
     try {
       for (int i = 0; i < image.getWidth(); i++) {
-        GlyphShape shape = generateCharacterShape(image, i, backgroundColor.getRGB(), antialias);
+        GlyphShape shape = generateCharacterShape(image, i, backgroundColor, antialias);
         if (shape != null) {
           String letter = oFont.getString(shape);
           if (letter != null) {
@@ -57,8 +55,8 @@ public class OCR {
   }
 
   public static GlyphShape generateCharacterShape(BufferedImage image, int startingX,
-      int backgroundRGB, boolean antialias) {
-    BackgroundComparator bgComparator = new BackgroundComparator(backgroundRGB, antialias);
+      Color background, boolean antialias) {
+    BackgroundComparator bgComparator = new BackgroundComparator(background);
     int barHeight = (int) (image.getHeight() * .5);
     for (int i = startingX; i < image.getWidth(); i++) {
       int rgb = image.getRGB(i, barHeight);
@@ -104,53 +102,38 @@ public class OCR {
   }
 
   private static Color getBackgroundColor(BufferedImage bi) {
-    // we will draw a line along the top to get the background color since
-    // most letters don't make it all the way up.
-    HashMap<Integer, IncrementingInteger> colorFrequencies =
-        new HashMap<Integer, IncrementingInteger>();
-    int j = 1;
+    int whiteCount = 0;
+    int blackCount = 0;
     for (int i = 0; i < bi.getWidth(); i++) {
-      int rgb = bi.getRGB(i, j);
-      IncrementingInteger ii = colorFrequencies.get(rgb);
-      if (ii == null) {
-        colorFrequencies.put(rgb, new IncrementingInteger());
+      int rgb = bi.getRGB(i, 0);
+      if (ScreenScraper.isAboutSameColor(rgb, Color.white.getRGB())) {
+        whiteCount++;
       } else {
-        ii.inc();
+        blackCount++;
       }
     }
-    int bestRGB = -1;
-    int bestCount = -1;
-    for (Map.Entry<Integer, IncrementingInteger> entry : colorFrequencies.entrySet()) {
-      if (entry.getValue().value >= bestCount) {
-        bestCount = entry.getValue().value;
-        bestRGB = entry.getKey();
-      }
-    }
-    return new Color(bestRGB);
-  }
-
-  private static class IncrementingInteger {
-    int value = 1;
-
-    void inc() {
-      value++;
-    }
+    return whiteCount > blackCount ? Color.white : Color.black;
   }
 
   private static class BackgroundComparator {
 
     private final int backgroundRGB;
-    private final int threshold;
 
-    public BackgroundComparator(int backgroundRGB, boolean antialias) {
-      this.backgroundRGB = backgroundRGB;
-      threshold = antialias ? 20 : 0;
+    public BackgroundComparator(Color background) {
+      this.backgroundRGB = background.getRGB();
     }
 
     public boolean isBackground(int rgb) {
-      return ScreenScraper.isAboutSameColor(rgb, backgroundRGB, threshold);
+      return ScreenScraper.isAboutSameColor(rgb, backgroundRGB);
     }
 
+  }
+
+  public static void main(String[] args) throws Exception {
+    BufferedImage bi =
+        ImageIO.read(new File("C:\\Users\\Addepar\\Downloads\\would like to trade.png"));
+    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.BOLD, 10), false));
+    System.out.println("done");
   }
 
 }

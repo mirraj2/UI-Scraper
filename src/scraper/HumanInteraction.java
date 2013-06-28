@@ -71,7 +71,9 @@ public final class HumanInteraction {
     }
 
     moveMouse((int) x - 1, (int) y);
+    sleep(pressSleepTime);
     moveMouse((int) x, (int) y);
+    sleep(pressSleepTime);
     robot.mousePress(InputEvent.BUTTON1_MASK);
     sleep(pressSleepTime);
     robot.mouseRelease(InputEvent.BUTTON1_MASK);
@@ -123,8 +125,24 @@ public final class HumanInteraction {
     if (beNiceToUsers && userActive) {
       throw new UserActiveException();
     }
+
+    boolean shift = false;
+
+    if (keyCode == KeyEvent.VK_COLON) {
+      keyCode = KeyEvent.VK_SEMICOLON;
+      shift = true;
+    }
+
+    if (shift) {
+      robot.keyPress(KeyEvent.VK_SHIFT);
+    }
+
     robot.keyPress(keyCode);
     robot.keyRelease(keyCode);
+
+    if (shift) {
+      robot.keyRelease(KeyEvent.VK_SHIFT);
+    }
   }
 
   public static void type(String s) {
@@ -167,7 +185,17 @@ public final class HumanInteraction {
       }
     } else if (Character.isDigit(c)) {
       return c - '0' + KeyEvent.VK_0;
-    } else {
+    } else if (c == ' ') {
+      return KeyEvent.VK_SPACE;
+    } else if (c == ':') {
+      return KeyEvent.VK_COLON;
+    } else if (c == '\\') {
+      return KeyEvent.VK_BACK_SLASH;
+    }
+    else if(c == '('){
+      return KeyEvent.VKfff
+    }
+    else {
       throw new UnsupportedOperationException("Cannot type: " + c);
     }
   }

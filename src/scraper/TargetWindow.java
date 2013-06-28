@@ -2,24 +2,24 @@ package scraper;
 
 import java.awt.Rectangle;
 
+import com.google.common.base.Objects;
+
 public class TargetWindow {
 
-  private final int id;
-  private final Rectangle bounds;
+  private final long id;
   private final String title;
 
-  public TargetWindow(int id, String title, Rectangle bounds) {
+  public TargetWindow(long id, String title) {
     this.id = id;
     this.title = title;
-    this.bounds = bounds;
   }
 
-  public int getID() {
+  public long getID() {
     return id;
   }
 
   public Rectangle getBounds() {
-    return bounds;
+    return WindowsAPI.getBounds(this);
   }
 
   public String getTitle() {
@@ -28,7 +28,24 @@ public class TargetWindow {
 
   @Override
   public String toString() {
-    return title + " " + bounds;
+    return id + " :: " + title;
   }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
+    TargetWindow other = (TargetWindow) obj;
+    if (id != other.id) return false;
+    return true;
+  }
+
+
 
 }

@@ -10,7 +10,6 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import scraper.WindowsAPI.StringNameCallback;
 
 public class ScraperUtils {
 
@@ -52,12 +51,13 @@ public class ScraperUtils {
   /**
    * Waits until the given image has disappeared. If the image never comes into sight, this will return after the timeout.
    */
-  public static void waitToDisappear(BufferedImage image, int timeout, ScreenScraper scraper) {
+  public static void waitToDisappear(BufferedImage image, int timeout, ScreenScraper scraper,
+      Rectangle location) {
     boolean seenImage = false;
     long time = System.currentTimeMillis();
     while (true) {
       HumanInteraction.sleep(400);
-      Rectangle loc = scraper.getLocationOf(image);
+      Rectangle loc = scraper.getLocationOf(image, location);
       if (loc != null) {
         seenImage = true;
         continue;
@@ -73,11 +73,11 @@ public class ScraperUtils {
    * 
    * @return The bounds of the frame on the screen.
    */
-  public static TargetWindow waitForFrameToAppear(int timeout, StringNameCallback callback) {
+  public static TargetWindow waitForFrameToAppear(int timeout, String windowName) {
     long time = System.currentTimeMillis();
     while (true) {
       HumanInteraction.sleep(100);
-      List<TargetWindow> windows = WindowsAPI.findWindows(callback);
+      List<TargetWindow> windows = WindowsAPI.findWindows(windowName);
       for (TargetWindow window : windows) {
         if (isOnScreen(window)) {
           return window;

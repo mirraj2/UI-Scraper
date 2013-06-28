@@ -84,7 +84,7 @@ public class OCRFont {
       g.setColor(Color.black);
       g.drawString(c, 0, g.getFontMetrics().getAscent());
 
-      GlyphShape shape = OCR.generateCharacterShape(bi, 0, Color.white.getRGB(), antialias);
+      GlyphShape shape = OCR.generateCharacterShape(bi, 0, Color.white, antialias);
       if (shape == null) {
         throw new RuntimeException("Could not generate CharacterShape for character= " + c);
       }
