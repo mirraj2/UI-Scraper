@@ -6,16 +6,28 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.log4j.Logger;
 import scraper.ScreenScraper;
 
 
 public class OCR {
+
+  @SuppressWarnings("unused")
+  private static final Logger logger = Logger.getLogger(OCR.class);
 
   public static String parse(BufferedImage image, Font font, boolean antialias) {
     if (image == null) {
@@ -25,20 +37,43 @@ public class OCR {
       throw new IllegalArgumentException("font can't be null");
     }
 
-    OCRFont oFont = OCRFont.create(font, antialias);
+    List<OCRFont> fonts = Lists.newArrayList();
+    for (int i = 0; i < 3; i++) {
+      fonts.add(OCRFont.create(font.deriveFont(font.getSize2D() - i), antialias));
+    }
 
-    Color backgroundColor = getBackgroundColor(image);
+    Color foregroundColor = getForegroundColor(image);
 
     StringBuffer ret = new StringBuffer();
 
     try {
+      int lastX = 0;
       for (int i = 0; i < image.getWidth(); i++) {
-        GlyphShape shape = generateCharacterShape(image, i, backgroundColor, antialias);
+        GlyphShape shape = generateCharacterShape(image, i, foregroundColor, antialias, false);
         if (shape != null) {
-          String letter = oFont.getString(shape);
-          if (letter != null) {
-            ret.append(letter);
+
+          if (ret.length() > 0 && shape.getMinX() - lastX > 3) {
+            ret.append(' ');
           }
+          lastX = shape.getMaxX();
+
+          String letter = null;
+          for (OCRFont f : fonts) {
+            letter = f.getString(shape);
+            if (letter != null) {
+              break;
+            }
+          }
+
+          if (letter != null) {
+            if (letter.equals(",") && shape.getMinY() < 5) {
+              letter = "'";
+            }
+            ret.append(letter);
+          } else {
+            ret.append("?");
+          }
+
           i = shape.getMaxX() + 1;
         }
       }
@@ -55,21 +90,25 @@ public class OCR {
   }
 
   public static GlyphShape generateCharacterShape(BufferedImage image, int startingX,
-      Color background, boolean antialias) {
-    BackgroundComparator bgComparator = new BackgroundComparator(background);
-    int barHeight = (int) (image.getHeight() * .5);
+      Color foreground, boolean antialias, boolean walkRight) {
+    ForegroundComparator fgComparator = new ForegroundComparator(foreground);
     for (int i = startingX; i < image.getWidth(); i++) {
-      int rgb = image.getRGB(i, barHeight);
-      if (!bgComparator.isBackground(rgb)) {
-        GlyphShape shape = findShape(image, i, barHeight, bgComparator);
-        return shape;
+      for (int j = 0; j < image.getHeight(); j++) {
+        int rgb = image.getRGB(i, j);
+        if (fgComparator.isForeground(rgb)) {
+          GlyphShape shape = findShape(image, i, j, fgComparator);
+          return shape;
+        }
+      }
+      if (!walkRight) {
+        break;
       }
     }
     return null;
   }
 
   private static GlyphShape findShape(BufferedImage bi, int startX, int startY,
-      BackgroundComparator bgComparator) {
+      ForegroundComparator fgComparator) {
     Queue<Point> queue = new LinkedList<Point>();
     Point firstPoint = new Point(startX, startY);
     queue.add(firstPoint);
@@ -88,7 +127,7 @@ public class OCR {
           Point next = new Point(i, j);
           if (!pointsSeen.contains(next)) {
             pointsSeen.add(next);
-            if (!bgComparator.isBackground(bi.getRGB(i, j))) {
+            if (fgComparator.isForeground(bi.getRGB(i, j))) {
               queue.add(next);
             }
           }
@@ -101,38 +140,55 @@ public class OCR {
     return ret;
   }
 
-  private static Color getBackgroundColor(BufferedImage bi) {
-    int whiteCount = 0;
-    int blackCount = 0;
+  private static Color getForegroundColor(BufferedImage bi) {
+    Map<Integer, AtomicInteger> counts = Maps.newHashMap();
+
+    int backgroundRGB = bi.getRGB(0, 0);
+
     for (int i = 0; i < bi.getWidth(); i++) {
-      int rgb = bi.getRGB(i, 0);
-      if (ScreenScraper.isAboutSameColor(rgb, Color.white.getRGB())) {
-        whiteCount++;
-      } else {
-        blackCount++;
+      for (int j = 0; j < bi.getHeight(); j++) {
+        int rgb = bi.getRGB(i, j);
+
+        if (ScreenScraper.isAboutSameColor(rgb, backgroundRGB)) {
+          continue;
+        }
+
+        AtomicInteger a = counts.get(rgb);
+        if (a == null) {
+          counts.put(rgb, a = new AtomicInteger());
+        }
+        a.incrementAndGet();
       }
     }
-    return whiteCount > blackCount ? Color.white : Color.black;
+
+    List<Entry<Integer, AtomicInteger>> entries = Lists.newArrayList(counts.entrySet());
+    Collections.sort(entries, new Comparator<Entry<Integer, AtomicInteger>>() {
+      @Override
+      public int compare(Entry<Integer, AtomicInteger> o1, Entry<Integer, AtomicInteger> o2) {
+        return o2.getValue().get() - o1.getValue().get();
+      }
+    });
+    
+    return new Color(entries.get(0).getKey());
   }
 
-  private static class BackgroundComparator {
+  private static class ForegroundComparator {
 
-    private final int backgroundRGB;
+    private final int foregroundRGB;
 
-    public BackgroundComparator(Color background) {
-      this.backgroundRGB = background.getRGB();
+    public ForegroundComparator(Color foreground) {
+      this.foregroundRGB = foreground.getRGB();
     }
 
-    public boolean isBackground(int rgb) {
-      return ScreenScraper.isAboutSameColor(rgb, backgroundRGB);
+    public boolean isForeground(int rgb) {
+      return ScreenScraper.isAboutSameColor(rgb, foregroundRGB);
     }
 
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage bi =
-        ImageIO.read(new File("C:\\Users\\Addepar\\Downloads\\would like to trade.png"));
-    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.BOLD, 10), false));
+    BufferedImage bi = ImageIO.read(new File("C:/dump/0.png"));
+    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.PLAIN, 13), false));
     System.out.println("done");
   }
 

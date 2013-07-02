@@ -59,6 +59,14 @@ public class GlyphShape {
     return maxX;
   }
 
+  public int getMinX() {
+    return minX;
+  }
+
+  public int getMinY() {
+    return minY;
+  }
+
   @Override
   public String toString() {
     return ("CharacterShape[" + pixels.size() + " pixels][ hash=" + hashCode() + " ]");

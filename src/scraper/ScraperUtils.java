@@ -53,17 +53,15 @@ public class ScraperUtils {
    */
   public static void waitToDisappear(BufferedImage image, int timeout, ScreenScraper scraper,
       Rectangle location) {
-    boolean seenImage = false;
     long time = System.currentTimeMillis();
     while (true) {
       HumanInteraction.sleep(400);
       Rectangle loc = scraper.getLocationOf(image, location);
-      if (loc != null) {
-        seenImage = true;
-        continue;
+      if (loc == null) {
+        return;
       }
-      if (seenImage || System.currentTimeMillis() - time > timeout) {
-        break;
+      if (System.currentTimeMillis() - time > timeout) {
+        throw new RuntimeException("Image never disappeared.");
       }
     }
   }

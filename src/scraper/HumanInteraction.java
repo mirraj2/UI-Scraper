@@ -15,21 +15,23 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import org.apache.log4j.Logger;
+
 /**
  * A robot which uses the mouse and keyboard like a human.
- * 
- * @author jmirra
- * 
  */
 public final class HumanInteraction {
+
+  @SuppressWarnings("unused")
+  private static final Logger logger = Logger.getLogger(HumanInteraction.class);
 
   private static long lastActiveTime = 0;
   private static boolean userActive = false;
   private static final int TIME_UNTIL_INACTIVE = 500;
 
   private static Robot robot;
-  private static final int MIN_KEY_DELAY = 80;
-  private static final int MAX_KEY_DELAY = 200;
+  private static final int MIN_KEY_DELAY = 50;
+  private static final int MAX_KEY_DELAY = 70;
   private static int moveSleepTime = 30;
   private static final int pressSleepTime = 30;
   private static boolean beNiceToUsers = true;
@@ -43,13 +45,13 @@ public final class HumanInteraction {
     startUserActiveThread();
   }
 
-  public synchronized static void moveMouse(int x, int y) {
+  public synchronized static void moveMouse(double x, double y) {
     if (beNiceToUsers && userActive) {
       throw new UserActiveException();
     }
 
-    robot.mouseMove(x, y);
-    lastMouseLoc = new Point(x, y);
+    robot.mouseMove((int) x, (int) y);
+    lastMouseLoc = new Point((int) x, (int) y);
     sleep(moveSleepTime);
   }
 
@@ -65,6 +67,13 @@ public final class HumanInteraction {
     sleep(pressSleepTime);
   }
 
+  public static void controlClick(double x, double y) {
+    robot.keyPress(KeyEvent.VK_CONTROL);
+    sleep(30);
+    click(x, y);
+    robot.keyRelease(KeyEvent.VK_CONTROL);
+  }
+
   public synchronized static void click(double x, double y) {
     if (beNiceToUsers && userActive) {
       throw new UserActiveException();
@@ -78,6 +87,22 @@ public final class HumanInteraction {
     sleep(pressSleepTime);
     robot.mouseRelease(InputEvent.BUTTON1_MASK);
     sleep(pressSleepTime);
+  }
+
+  public synchronized static void fastClick(double x, double y) {
+    if (beNiceToUsers && userActive) {
+      throw new UserActiveException();
+    }
+
+    robot.mouseMove((int) x - 1, (int) y);
+    sleep(1);
+    robot.mouseMove((int) x, (int) y);
+    sleep(1);
+    lastMouseLoc = new Point((int) x, (int) y);
+    robot.mousePress(InputEvent.BUTTON1_MASK);
+    sleep(1);
+    robot.mouseRelease(InputEvent.BUTTON1_MASK);
+    sleep(1);
   }
 
   public static void doubleClick(double x, double y) {
@@ -191,11 +216,11 @@ public final class HumanInteraction {
       return KeyEvent.VK_COLON;
     } else if (c == '\\') {
       return KeyEvent.VK_BACK_SLASH;
-    }
-    else if(c == '('){
-      return KeyEvent.VKfff
-    }
-    else {
+    } else if (c == '(') {
+      return KeyEvent.VK_LEFT_PARENTHESIS;
+    } else if (c == ')') {
+      return KeyEvent.VK_RIGHT_PARENTHESIS;
+    } else {
       throw new UnsupportedOperationException("Cannot type: " + c);
     }
   }

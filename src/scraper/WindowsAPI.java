@@ -20,6 +20,7 @@ public final class WindowsAPI {
     Pointer p = Pointer.createConstant(window.getID());
     User32.INSTANCE.ShowWindow(p, 1);
     User32.INSTANCE.SetForegroundWindow(p);
+    HumanInteraction.sleep(1000);
   }
 
   public static TargetWindow findWindow(String windowName) {

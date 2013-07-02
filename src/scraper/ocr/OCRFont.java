@@ -61,10 +61,10 @@ public class OCRFont {
     for (char c = '0'; c <= '9'; c++) {
       supportedCharacters.add(c);
     }
-    supportedCharacters.add('(');
-    supportedCharacters.add(')');
-    supportedCharacters.add('/');
-    supportedCharacters.add('$');
+    final String s = "()/$,.'-";
+    for (int i = 0; i < s.length(); i++) {
+      supportedCharacters.add(s.charAt(i));
+    }
 
     List<String> glyphs = Lists.newArrayList();
 
@@ -76,6 +76,8 @@ public class OCRFont {
       for (Character cc : supportedCharacters) {
         glyphs.add("" + c + cc);
       }
+      glyphs.add("tt" + c);
+      glyphs.add("ft" + c);
     }
 
     for (String c : glyphs) {
@@ -84,7 +86,7 @@ public class OCRFont {
       g.setColor(Color.black);
       g.drawString(c, 0, g.getFontMetrics().getAscent());
 
-      GlyphShape shape = OCR.generateCharacterShape(bi, 0, Color.white, antialias);
+      GlyphShape shape = OCR.generateCharacterShape(bi, 0, Color.black, antialias, true);
       if (shape == null) {
         throw new RuntimeException("Could not generate CharacterShape for character= " + c);
       }
@@ -94,12 +96,14 @@ public class OCRFont {
         }
         if ("I".equals(c)) { // because I and l look exactly the same in arial
           continue;
+        } else if ("'".equals(c)) {
+          continue;
         }
         // else if ("P".equals(c)) { // because P and p look exactly the same in Tahoma
         // continue;
         // }
         else {
-          System.out.println("Trying to add:" + shape.getInfoString());
+          System.out.println("Trying to add:" + shape.getInfoString() + " [" + c + "]");
           for (GlyphShape key : shapeToStringMap.keySet()) {
             if (key.hashCode() == shape.hashCode()) {
               System.out.println("But already have: " + key.getInfoString());

@@ -1,22 +1,29 @@
 package scraper;
 
 import java.awt.AWTException;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.HashMap;
 
+import javax.imageio.ImageIO;
+
 import org.apache.log4j.Logger;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScreenScraper {
 
   @SuppressWarnings("unused")
   private static final Logger logger = Logger.getLogger(ScreenScraper.class);
 
-  private static final int THRESHOLD = 90;
+  private static final int THRESHOLD = 99;
+  private static final int BLACK_RGB = Color.black.getRGB();
 
   private final Dimension screenSize;
   private Robot bot;
@@ -33,6 +40,20 @@ public class ScreenScraper {
 
   public Robot getBot() {
     return bot;
+  }
+
+  public boolean isAllSingleColor(Rectangle r, Color c) {
+    BufferedImage bi = bot.createScreenCapture(r);
+    int rgb = c.getRGB();
+    for (int i = 0; i < bi.getWidth(); i++) {
+      for (int j = 0; j < bi.getHeight(); j++) {
+        int rgb2 = bi.getRGB(i, j);
+        if (rgb != rgb2) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   public static boolean isAboutSameColor(int rgbA, int rgbB) {
@@ -84,33 +105,52 @@ public class ScreenScraper {
     return ret;
   }
 
-  public Rectangle locateInImage(BufferedImage image, BufferedImage bi, boolean debug) {
-    if (image == null) {
-      throw new IllegalArgumentException("image cannot be null");
-    }
-    if (bi == null) {
-      throw new IllegalArgumentException("bi cannot be null");
-    }
+  public static void main(String[] args) throws Exception {
+    BufferedImage big = ImageIO.read(new File("C:/dump/t.png"));
+    BufferedImage small = ImageIO.read(new File("C:/dump/1.png"));
+    
+    Rectangle r = new ScreenScraper().locateInImage(small, big, false);
 
-    int w = image.getWidth();
-    int h = image.getHeight();
+    System.out.println(r);
+  }
+
+  private double getPercentageBlackPixels(BufferedImage bi) {
+    int c = 0;
+    for (int i = 0; i < bi.getWidth(); i++) {
+      for (int j = 0; j < bi.getHeight(); j++) {
+        if (bi.getRGB(i, j) == BLACK_RGB) {
+          c++;
+        }
+      }
+    }
+    return 1d * c / (bi.getWidth() * bi.getHeight());
+  }
+
+  public Rectangle locateInImage(BufferedImage smallImage, BufferedImage largeImage, boolean debug) {
+    checkNotNull(smallImage);
+    checkNotNull(largeImage);
+
+    int w = smallImage.getWidth();
+    int h = smallImage.getHeight();
+
+    boolean onlyMatchBlack = getPercentageBlackPixels(smallImage) > .1;
 
     // Check the cache
-    Point loc = cache.get(image);
+    Point loc = cache.get(smallImage);
     if (loc != null) {
-      if (isImageAt(image, bi, loc.x, loc.y, w, h)) {
+      if (isImageAt(smallImage, largeImage, loc.x, loc.y, w, h, onlyMatchBlack)) {
         return new Rectangle(loc.x, loc.y, w, h);
       }
     }
 
     // Search Everywhere
     int i, j;
-    for (i = 0; i < bi.getWidth() - image.getWidth(); i++) {
-      for (j = 0; j < bi.getHeight() - image.getHeight(); j++) {
-        if (isImageAt(image, bi, i, j, w, h)) {
+    for (i = 0; i <= largeImage.getWidth() - smallImage.getWidth(); i++) {
+      for (j = 0; j <= largeImage.getHeight() - smallImage.getHeight(); j++) {
+        if (isImageAt(smallImage, largeImage, i, j, w, h, onlyMatchBlack)) {
           Rectangle ret = new Rectangle(i, j, w, h);
           // cache the result
-          cache.put(image, new Point(ret.x, ret.y));
+          cache.put(smallImage, new Point(ret.x, ret.y));
           return ret;
         }
       }
@@ -118,23 +158,32 @@ public class ScreenScraper {
 
     // We could not find it
     if (debug) {
-      HumanInteraction.dumpImage(bi);
-      HumanInteraction.dumpImage(image);
+      HumanInteraction.dumpImage(largeImage);
+      HumanInteraction.dumpImage(smallImage);
     }
 
     return null;
   }
 
-  private boolean isImageAt(BufferedImage image, BufferedImage bi, int i, int j, int w, int h) {
-    if (i + w >= bi.getWidth() || j + h >= bi.getHeight()) {
+  private boolean isImageAt(BufferedImage smallImage, BufferedImage largeImage, int i, int j, int w, int h,
+      boolean onlyMatchBlack) {
+    if (i + w > largeImage.getWidth() || j + h > largeImage.getHeight()) {
       return false;
     }
 
     int x, y;
     for (x = 0; x < w; x++) {
       for (y = 0; y < h; y++) {
-        if (!isAboutSameColor(bi.getRGB(i + x, y + j), image.getRGB(x, y))) {
-          return false;
+        int rgbA = largeImage.getRGB(i + x, y + j);
+        int rgbB = smallImage.getRGB(x, y);
+        if (onlyMatchBlack) {
+          if (isAboutSameColor(rgbA, BLACK_RGB) ^ isAboutSameColor(rgbB, BLACK_RGB)) {
+            return false;
+          }
+        } else {
+          if (!isAboutSameColor(rgbA, rgbB)) {
+            return false;
+          }
         }
       }
     }
