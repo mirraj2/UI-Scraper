@@ -2,12 +2,13 @@ package scraper.internal;
 
 import java.util.Stack;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Clock {
 
   @SuppressWarnings("unused")
-  private static final Logger logger = Logger.getLogger(Clock.class);
+  private static final Logger logger = LoggerFactory.getLogger(Clock.class);
 
   private static final ThreadLocal<Stack<Clocker>> stack = new ThreadLocal<Stack<Clocker>>() {
     @Override

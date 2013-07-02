@@ -20,14 +20,15 @@ import javax.imageio.ImageIO;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scraper.ScreenScraper;
 
 
 public class OCR {
 
   @SuppressWarnings("unused")
-  private static final Logger logger = Logger.getLogger(OCR.class);
+  private static final Logger logger = LoggerFactory.getLogger(OCR.class);
 
   public static String parse(BufferedImage image, Font font, boolean antialias) {
     if (image == null) {

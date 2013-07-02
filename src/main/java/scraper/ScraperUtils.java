@@ -9,12 +9,13 @@ import java.awt.datatransfer.Transferable;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ScraperUtils {
 
   @SuppressWarnings("unused")
-  private static final Logger logger = Logger.getLogger(ScraperUtils.class);
+  private static final Logger logger = LoggerFactory.getLogger(ScraperUtils.class);
 
   public static Rectangle waitFor(BufferedImage image, int timeout, ScreenScraper scraper) {
     return waitFor(image, timeout, scraper, null, false);

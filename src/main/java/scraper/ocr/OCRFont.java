@@ -10,12 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OCRFont {
 
   @SuppressWarnings("unused")
-  private static final Logger logger = Logger.getLogger(OCRFont.class);
+  private static final Logger logger = LoggerFactory.getLogger(OCRFont.class);
 
   private HashMap<GlyphShape, String> shapeToStringMap = new HashMap<GlyphShape, String>();
 

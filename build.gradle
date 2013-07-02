@@ -1,0 +1,43 @@
+
+// Gradle tasks apply plugin: 'java'
+apply plugin: 'eclipse'
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.2-rc1'
+    }
+}
+apply plugin: 'fatjar'
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.5'
+}
+
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile 'com.google.guava:guava:14.+'
+    compile 'com.google.inject:guice:3.+'
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile 'ch.qos.logback:logback-classic:1.+'
+    compile 'joda-time:joda-time:2.+'
+    compile 'net.java.dev.jna:jna:3.+'
+    compile 'net.java.dev.jna:platform:3.+'
+    testCompile 'org.testng:testng:6.+'
+}
+
+
+sourceCompatibility = 7
+version = '1.0'
+fatJar {
+    exclude "**/*.DSA"
+    exclude "**/*.SF"
+}
+tasks.withType(Compile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:all' << '-Werror'
+}
+

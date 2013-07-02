@@ -15,7 +15,8 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A robot which uses the mouse and keyboard like a human.
@@ -23,7 +24,7 @@ import org.apache.log4j.Logger;
 public final class HumanInteraction {
 
   @SuppressWarnings("unused")
-  private static final Logger logger = Logger.getLogger(HumanInteraction.class);
+  private static final Logger logger = LoggerFactory.getLogger(HumanInteraction.class);
 
   private static long lastActiveTime = 0;
   private static boolean userActive = false;

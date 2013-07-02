@@ -9,12 +9,13 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.WinDef.RECT;
 import com.sun.jna.win32.StdCallLibrary;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class WindowsAPI {
 
   @SuppressWarnings("unused")
-  private static final Logger logger = Logger.getLogger(WindowsAPI.class);
+  private static final Logger logger = LoggerFactory.getLogger(WindowsAPI.class);
 
   public static void sendToFront(TargetWindow window) {
     Pointer p = Pointer.createConstant(window.getID());

@@ -1,1 +1,36 @@
-bin/
+# No temp files
+.DS_Store
+*/.DS_Store
+.*.swp
+
+# No java output files
+*/*.jar
+bin
+*.class
+deploy/
+*/target/
+build/
+classes/
+
+# No IDE files
+.idea/*
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.cache
+atlassian-ide-plugin.xml
+
+# No test output files
+test-output/
+.gradle
+out/
+*.hprof
+*.pyc
+
+# Scraper
+scrape/data/*
+scrape/img/*
+

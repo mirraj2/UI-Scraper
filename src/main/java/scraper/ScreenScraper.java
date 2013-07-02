@@ -13,14 +13,15 @@ import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScreenScraper {
 
   @SuppressWarnings("unused")
-  private static final Logger logger = Logger.getLogger(ScreenScraper.class);
+  private static final Logger logger = LoggerFactory.getLogger(ScreenScraper.class);
 
   private static final int THRESHOLD = 99;
   private static final int BLACK_RGB = Color.black.getRGB();
