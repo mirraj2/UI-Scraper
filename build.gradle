@@ -16,7 +16,7 @@ task wrapper(type: Wrapper) {
 
 apply plugin: 'maven'
 group = 'com.jasonmirra'
-
+version = '0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -34,7 +34,6 @@ dependencies {
 
 
 sourceCompatibility = 7
-version = '1.0'
 fatJar {
     exclude "**/*.DSA"
     exclude "**/*.SF"
