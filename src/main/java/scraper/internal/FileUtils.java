@@ -12,7 +12,7 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
-import com.google.common.collect.Lists;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class FileUtils {
 
@@ -21,8 +21,8 @@ public class FileUtils {
   }
 
   public static void write(byte[] data, File file, boolean mkdirsIfNecessary) {
-    Pre.checkNonNull(data, "data");
-    Pre.checkNonNull(file, "file");
+    checkNotNull(data, "data");
+    checkNotNull(file, "file");
 
     try {
       if (mkdirsIfNecessary) {
@@ -98,9 +98,7 @@ public class FileUtils {
   }
 
   public static void delete(File file) {
-    if (file == null) {
-      throw new NullArgumentException("file");
-    }
+    checkNotNull(file);
     if (!file.exists()) {
       throw new IllegalArgumentException("File does not exist: " + file);
     }
@@ -113,9 +111,7 @@ public class FileUtils {
   }
 
   public static void deleteDirectory(File file) {
-    if (file == null) {
-      throw new NullArgumentException("file");
-    }
+    checkNotNull(file);
     if (!file.exists()) {
       throw new IllegalArgumentException("Directory does not exist: " + file);
     }
@@ -185,8 +181,8 @@ public class FileUtils {
   }
 
   public static File makeChildFolder(File parent, String folderName) {
-    Pre.checkNonNull(parent, "parent");
-    Pre.checkNonNull(folderName, "folderName");
+    checkNotNull(parent, "parent");
+    checkNotNull(folderName, "folderName");
 
     String path = parent.isDirectory() ? parent.getPath() : parent.getParent();
     path = endWithSlash(path);
@@ -197,8 +193,8 @@ public class FileUtils {
   }
 
   public static File getChildFile(File parent, String fileName) {
-    Pre.checkNonNull(parent, "parent");
-    Pre.checkNonNull(fileName, "fileName");
+    checkNotNull(parent, "parent");
+    checkNotNull(fileName, "fileName");
 
     String path = parent.getPath();
     path = endWithSlash(path);
@@ -214,8 +210,8 @@ public class FileUtils {
   }
 
   public static File appendToName(String s, File file) {
-    Pre.checkNonNull(s, "s");
-    Pre.checkNonNull(file, "file");
+    checkNotNull(s, "s");
+    checkNotNull(file, "file");
 
     String path = file.getParent();
     path = endWithSlash(path);
@@ -226,8 +222,8 @@ public class FileUtils {
   }
 
   public static List<File> listFilesWithExtenstion(File parent, String ext) {
-    Pre.checkNonNull(parent, "parent");
-    Pre.checkNonNull(ext, "ext");
+    checkNotNull(parent, "parent");
+    checkNotNull(ext, "ext");
 
     if (!parent.exists()) {
       throw new IllegalArgumentException("File does not exist: " + parent);

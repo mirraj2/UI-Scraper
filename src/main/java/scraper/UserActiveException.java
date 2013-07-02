@@ -6,6 +6,7 @@ package scraper;
  * @author jmirra
  *
  */
+@SuppressWarnings("serial")
 public class UserActiveException extends RuntimeException {
 
 }
