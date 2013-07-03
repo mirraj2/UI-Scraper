@@ -7,6 +7,7 @@ import java.awt.PointerInfo;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
@@ -171,6 +172,11 @@ public final class HumanInteraction {
     }
   }
 
+  public static void typeViaCopyPaste(String s) {
+    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(s), null);
+    type(KeyEvent.VK_CONTROL, KeyEvent.VK_V);
+  }
+
   public static void type(String s) {
     if (s == null) {
       throw new IllegalArgumentException("s");
@@ -221,6 +227,10 @@ public final class HumanInteraction {
       return KeyEvent.VK_LEFT_PARENTHESIS;
     } else if (c == ')') {
       return KeyEvent.VK_RIGHT_PARENTHESIS;
+    } else if (c == '.') {
+      return KeyEvent.VK_PERIOD;
+    } else if (c == ',') {
+      return KeyEvent.VK_COMMA;
     } else {
       throw new UnsupportedOperationException("Cannot type: " + c);
     }

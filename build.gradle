@@ -33,7 +33,7 @@ dependencies {
 }
 
 
-sourceCompatibility = 7
+sourceCompatibility = 6
 fatJar {
     exclude "**/*.DSA"
     exclude "**/*.SF"
