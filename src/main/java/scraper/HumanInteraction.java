@@ -47,6 +47,14 @@ public final class HumanInteraction {
     startUserActiveThread();
   }
 
+  public static void main(String[] args) {
+    // for (int i = 0; i < 1000; i++) {
+    // robot.mousePress(InputEvent.BUTTON1_MASK);
+    // robot.mouseRelease(InputEvent.BUTTON1_MASK);
+    // sleep(10);
+    // }
+  }
+
   public synchronized static void moveMouse(double x, double y) {
     if (beNiceToUsers && userActive) {
       throw new UserActiveException();

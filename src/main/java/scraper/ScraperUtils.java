@@ -18,7 +18,12 @@ public class ScraperUtils {
   private static final Logger logger = LoggerFactory.getLogger(ScraperUtils.class);
 
   public static Rectangle waitFor(BufferedImage image, int timeout, ScreenScraper scraper) {
-    return waitFor(image, timeout, scraper, null, false);
+    return waitFor(image, timeout, scraper, null, null, false);
+  }
+
+  public static Rectangle waitFor(BufferedImage image, int timeout, ScreenScraper scraper,
+      Rectangle imageArea, boolean debug) {
+    return waitFor(image, timeout, scraper, imageArea, null, debug);
   }
 
   /**
@@ -27,12 +32,12 @@ public class ScraperUtils {
    * @return The location of the image on the screen.
    */
   public static Rectangle waitFor(BufferedImage image, int timeout, ScreenScraper scraper,
-      Rectangle imageArea, boolean debug) {
+      Rectangle imageArea, Boolean matchBlackPixels, boolean debug) {
     logger.debug("Searching for image....");
     long time = System.currentTimeMillis();
     while (true) {
       HumanInteraction.sleep(400);
-      Rectangle loc = scraper.getLocationOf(image, imageArea, debug);
+      Rectangle loc = scraper.getLocationOf(image, imageArea, matchBlackPixels, debug);
       if (loc != null) {
         logger.debug("Found image!");
         return loc;

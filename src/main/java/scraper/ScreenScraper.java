@@ -78,16 +78,17 @@ public class ScreenScraper {
   }
 
   public Rectangle getLocationOf(BufferedImage image, boolean debug) {
-    return getLocationOf(image, null, debug);
+    return getLocationOf(image, null, null, debug);
   }
 
   public Rectangle getLocationOf(BufferedImage image, Rectangle rect) {
-    return getLocationOf(image, rect, false);
+    return getLocationOf(image, rect, null, false);
   }
 
   static int debug_count = 0;
 
-  public Rectangle getLocationOf(BufferedImage image, Rectangle rect, boolean debug) {
+  public Rectangle getLocationOf(BufferedImage image, Rectangle rect, Boolean matchBlackPixels,
+      boolean debug) {
     if (image == null) {
       throw new IllegalArgumentException("image cannot be null");
     }
@@ -97,7 +98,7 @@ public class ScreenScraper {
 
     BufferedImage bi = bot.createScreenCapture(rect);
 
-    Rectangle ret = locateInImage(image, bi, debug);
+    Rectangle ret = locateInImage(image, bi, matchBlackPixels, debug);
     if (ret != null) {
       // translate to global coordinates
       ret.x += rect.x;
@@ -107,10 +108,10 @@ public class ScreenScraper {
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage big = ImageIO.read(new File("C:/dump/t.png"));
-    BufferedImage small = ImageIO.read(new File("C:/dump/1.png"));
+    BufferedImage big = ImageIO.read(new File("C:/dump/real.png"));
+    BufferedImage small = ImageIO.read(new File("C:/dump/target.png"));
     
-    Rectangle r = new ScreenScraper().locateInImage(small, big, false);
+    Rectangle r = new ScreenScraper().locateInImage(small, big, false, false);
 
     System.out.println(r);
   }
@@ -127,19 +128,22 @@ public class ScreenScraper {
     return 1d * c / (bi.getWidth() * bi.getHeight());
   }
 
-  public Rectangle locateInImage(BufferedImage smallImage, BufferedImage largeImage, boolean debug) {
+  public Rectangle locateInImage(BufferedImage smallImage, BufferedImage largeImage,
+      Boolean matchBlackPixels, boolean debug) {
     checkNotNull(smallImage);
     checkNotNull(largeImage);
 
     int w = smallImage.getWidth();
     int h = smallImage.getHeight();
 
-    boolean onlyMatchBlack = getPercentageBlackPixels(smallImage) > .1;
+    if (matchBlackPixels == null) {
+      matchBlackPixels = getPercentageBlackPixels(smallImage) > .1;
+    }
 
     // Check the cache
     Point loc = cache.get(smallImage);
     if (loc != null) {
-      if (isImageAt(smallImage, largeImage, loc.x, loc.y, w, h, onlyMatchBlack)) {
+      if (isImageAt(smallImage, largeImage, loc.x, loc.y, w, h, matchBlackPixels)) {
         return new Rectangle(loc.x, loc.y, w, h);
       }
     }
@@ -148,7 +152,7 @@ public class ScreenScraper {
     int i, j;
     for (i = 0; i <= largeImage.getWidth() - smallImage.getWidth(); i++) {
       for (j = 0; j <= largeImage.getHeight() - smallImage.getHeight(); j++) {
-        if (isImageAt(smallImage, largeImage, i, j, w, h, onlyMatchBlack)) {
+        if (isImageAt(smallImage, largeImage, i, j, w, h, matchBlackPixels)) {
           Rectangle ret = new Rectangle(i, j, w, h);
           // cache the result
           cache.put(smallImage, new Point(ret.x, ret.y));
