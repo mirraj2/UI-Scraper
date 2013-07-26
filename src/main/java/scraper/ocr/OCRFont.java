@@ -8,8 +8,10 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +20,10 @@ public class OCRFont {
   @SuppressWarnings("unused")
   private static final Logger logger = LoggerFactory.getLogger(OCRFont.class);
 
-  private HashMap<GlyphShape, String> shapeToStringMap = new HashMap<GlyphShape, String>();
+  private HashMap<GlyphShape, String> shapeToStringMap = Maps.newLinkedHashMap();
 
-  private static final HashMap<Font, OCRFont> fontMap = new HashMap<Font, OCRFont>();
-  private static final HashMap<Font, OCRFont> antialiasFontMap = new HashMap<Font, OCRFont>();
+  private static final HashMap<Font, OCRFont> fontMap = Maps.newLinkedHashMap();
+  private static final HashMap<Font, OCRFont> antialiasFontMap = Maps.newLinkedHashMap();
 
   public static OCRFont create(Font font, boolean antialias) {
     OCRFont ret = antialias ? antialiasFontMap.get(font) : fontMap.get(font);
@@ -40,13 +42,13 @@ public class OCRFont {
     BufferedImage bi =
         new BufferedImage((int) (font.getSize() * 1.5), (int) (font.getSize() * 1.5),
             BufferedImage.TYPE_INT_ARGB);
-    Graphics g = bi.getGraphics();
-    Graphics2D g2d = (Graphics2D) g;
+    Graphics gg = bi.getGraphics();
+    Graphics2D g = (Graphics2D) gg;
     if (antialias) {
-      g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+      g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
           RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     } else {
-      g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+      g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
           RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
     }
     g.setFont(font);
@@ -70,73 +72,63 @@ public class OCRFont {
     List<String> glyphs = Lists.newArrayList();
 
     for (Character c : supportedCharacters) {
-      glyphs.add("" + c);
+      glyphs.add("tt" + c);
+      glyphs.add("ft" + c);
+      glyphs.add("ff" + c);
     }
 
     for (Character c : supportedCharacters) {
       for (Character cc : supportedCharacters) {
         glyphs.add("" + c + cc);
       }
-      glyphs.add("tt" + c);
-      glyphs.add("ft" + c);
+    }
+
+    for (Character c : supportedCharacters) {
+      glyphs.add("" + c);
     }
 
     for (String c : glyphs) {
+
       g.setColor(Color.white);
       g.fillRect(0, 0, bi.getWidth(), bi.getHeight());
       g.setColor(Color.black);
       g.drawString(c, 0, g.getFontMetrics().getAscent());
 
-      GlyphShape shape = OCR.generateCharacterShape(bi, 0, Color.black, antialias, true);
+      GlyphShape shape = OCR.generateCharacterShape(c, bi, 0, Color.black, antialias, true);
       if (shape == null) {
         throw new RuntimeException("Could not generate CharacterShape for character= " + c);
       }
-      if (shapeToStringMap.get(shape) != null) {
-        if (c.length() > 1) {
-          continue;
-        }
-        if ("I".equals(c)) { // because I and l look exactly the same in arial
-          continue;
-        } else if ("'".equals(c)) {
-          continue;
-        }
-        // else if ("P".equals(c)) { // because P and p look exactly the same in Tahoma
-        // continue;
-        // }
-        else {
-          System.out.println("Trying to add:" + shape.getInfoString() + " [" + c + "]");
-          for (GlyphShape key : shapeToStringMap.keySet()) {
-            if (key.hashCode() == shape.hashCode()) {
-              System.out.println("But already have: " + key.getInfoString());
-            }
-          }
-          throw new RuntimeException("HashCode() method for CharacterShape has a duplicate.");
-        }
-      }
+
       shapeToStringMap.put(shape, c + "");
     }
 
   }
 
-  // private String getStringByBestMatch(GlyphShape shape) {
-  // double bestScore = -1;
-  // Map.Entry<GlyphShape, String> bestMatch = null;
-  // for (Map.Entry<GlyphShape, String> entry : shapeToStringMap.entrySet()) {
-  // GlyphShape s = entry.getKey();
-  // double score = shape.getLikenessScore(s);
-  // if (score > bestScore) {
-  // bestScore = score;
-  // bestMatch = entry;
-  // }
-  // }
-  // // System.out.println("attempting to match: "+shape.getInfoString());
-  // // System.out.println("best score = "+bestScore);
-  // // System.out.println("gotten by: "+bestMatch.getKey().getInfoString());
-  // return bestMatch.getValue();
-  // }
+  private String getStringByBestMatch(GlyphShape shape) {
+    double bestScore = -1;
+    Map.Entry<GlyphShape, String> bestMatch = null;
+    for (Map.Entry<GlyphShape, String> entry : shapeToStringMap.entrySet()) {
+      GlyphShape s = entry.getKey();
+      double score = shape.getLikenessScore(s);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = entry;
+      }
+    }
+    if(bestScore > .9){
+      logger.debug("returning closest match: " + bestMatch.getValue());
+      return bestMatch.getValue();
+    }
+    logger.warn("didn't find a match. best score was: " + bestScore);
+    return null;
+  }
 
   public String getString(GlyphShape shape) {
-    return shapeToStringMap.get(shape);
+    String ret = shapeToStringMap.get(shape);
+    if (ret != null) {
+      return ret;
+    }
+    return getStringByBestMatch(shape);
   }
 
 }

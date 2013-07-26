@@ -39,7 +39,7 @@ public class OCR {
     }
 
     List<OCRFont> fonts = Lists.newArrayList();
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 1; i++) {
       fonts.add(OCRFont.create(font.deriveFont(font.getSize2D() - i), antialias));
     }
 
@@ -50,7 +50,8 @@ public class OCR {
     try {
       int lastX = 0;
       for (int i = 0; i < image.getWidth(); i++) {
-        GlyphShape shape = generateCharacterShape(image, i, foregroundColor, antialias, false);
+        GlyphShape shape =
+            generateCharacterShape("unknown", image, i, foregroundColor, antialias, false);
         if (shape != null) {
 
           if (ret.length() > 0 && shape.getMinX() - lastX > 3) {
@@ -90,14 +91,14 @@ public class OCR {
     return ret.toString();
   }
 
-  public static GlyphShape generateCharacterShape(BufferedImage image, int startingX,
+  public static GlyphShape generateCharacterShape(String s, BufferedImage image, int startingX,
       Color foreground, boolean antialias, boolean walkRight) {
     ForegroundComparator fgComparator = new ForegroundComparator(foreground);
     for (int i = startingX; i < image.getWidth(); i++) {
       for (int j = 0; j < image.getHeight(); j++) {
         int rgb = image.getRGB(i, j);
         if (fgComparator.isForeground(rgb)) {
-          GlyphShape shape = findShape(image, i, j, fgComparator);
+          GlyphShape shape = findShape(s, image, i, j, fgComparator);
           return shape;
         }
       }
@@ -108,14 +109,14 @@ public class OCR {
     return null;
   }
 
-  private static GlyphShape findShape(BufferedImage bi, int startX, int startY,
+  private static GlyphShape findShape(String s, BufferedImage bi, int startX, int startY,
       ForegroundComparator fgComparator) {
     Queue<Point> queue = new LinkedList<Point>();
     Point firstPoint = new Point(startX, startY);
     queue.add(firstPoint);
     HashSet<Point> pointsSeen = new HashSet<Point>();
     pointsSeen.add(firstPoint);
-    GlyphShape ret = new GlyphShape();
+    GlyphShape ret = new GlyphShape(s);
     while (!queue.isEmpty()) {
       Point p = queue.poll();
       ret.addPixel(p);
@@ -188,7 +189,7 @@ public class OCR {
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage bi = ImageIO.read(new File("C:/dump/0.png"));
+    BufferedImage bi = ImageIO.read(new File("C:/dump/a.png"));
     System.out.println(OCR.parse(bi, new Font("Tahoma", Font.PLAIN, 13), false));
     System.out.println("done");
   }

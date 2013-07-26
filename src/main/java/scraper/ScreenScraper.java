@@ -108,8 +108,8 @@ public class ScreenScraper {
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage big = ImageIO.read(new File("C:/dump/real.png"));
-    BufferedImage small = ImageIO.read(new File("C:/dump/target.png"));
+    BufferedImage big = ImageIO.read(new File("C:/dump/0.png"));
+    BufferedImage small = ImageIO.read(new File("C:/dump/1.png"));
     
     Rectangle r = new ScreenScraper().locateInImage(small, big, false, false);
 

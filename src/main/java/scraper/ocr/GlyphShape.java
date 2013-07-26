@@ -5,6 +5,8 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.google.common.collect.Sets;
+
 public class GlyphShape {
 
   private int minX = Integer.MAX_VALUE / 2;
@@ -13,6 +15,7 @@ public class GlyphShape {
   private int maxY = -1;
 
   private Integer hashCode = null;
+  private final String s;
 
   private Set<Point> pixels = new TreeSet<Point>(new Comparator<Point>() {
     @Override
@@ -23,6 +26,10 @@ public class GlyphShape {
       return o2.y - o1.y;
     }
   });
+
+  public GlyphShape(String s) {
+    this.s = s;
+  }
 
   /**
    * Called after all points have been added to this shape.
@@ -69,7 +76,7 @@ public class GlyphShape {
 
   @Override
   public String toString() {
-    return ("CharacterShape[" + pixels.size() + " pixels][ hash=" + hashCode() + " ]");
+    return "GlyphShape: " + s;
 
   }
 
@@ -122,6 +129,10 @@ public class GlyphShape {
     return obj.hashCode() == this.hashCode();
   }
 
+  public String getS() {
+    return s;
+  }
+
   public double getLikenessScore(GlyphShape s) {
     double score = 0;
 
@@ -137,15 +148,9 @@ public class GlyphShape {
       return score;
     }
 
-    for (Point p : pixels) {
-      if (s.pixels.contains(p)) {
-        score += 1;
-      }
-    }
+    Set<Point> diff = Sets.symmetricDifference(this.pixels, s.pixels);
 
-    score -= Math.abs(pixels.size() - s.pixels.size());
-
-    return score;
+    return 1 - 1.0 * diff.size() / (this.pixels.size() + s.pixels.size());
   }
 
 }
