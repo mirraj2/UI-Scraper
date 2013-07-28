@@ -51,7 +51,8 @@ public class OCR {
       int lastX = 0;
       for (int i = 0; i < image.getWidth(); i++) {
         GlyphShape shape =
-            generateCharacterShape("unknown", image, i, foregroundColor, antialias, false);
+            generateCharacterShape("unknown", Img.wrap(image), i, foregroundColor, antialias,
+                false);
         if (shape != null) {
 
           if (ret.length() > 0 && shape.getMinX() - lastX > 3) {
@@ -91,7 +92,7 @@ public class OCR {
     return ret.toString();
   }
 
-  public static GlyphShape generateCharacterShape(String s, BufferedImage image, int startingX,
+  public static GlyphShape generateCharacterShape(String s, Img image, int startingX,
       Color foreground, boolean antialias, boolean walkRight) {
     ForegroundComparator fgComparator = new ForegroundComparator(foreground);
     for (int i = startingX; i < image.getWidth(); i++) {
@@ -109,7 +110,7 @@ public class OCR {
     return null;
   }
 
-  private static GlyphShape findShape(String s, BufferedImage bi, int startX, int startY,
+  private static GlyphShape findShape(String s, Img bi, int startX, int startY,
       ForegroundComparator fgComparator) {
     Queue<Point> queue = new LinkedList<Point>();
     Point firstPoint = new Point(startX, startY);
@@ -175,7 +176,6 @@ public class OCR {
   }
 
   private static class ForegroundComparator {
-
     private final int foregroundRGB;
 
     public ForegroundComparator(Color foreground) {
@@ -185,12 +185,11 @@ public class OCR {
     public boolean isForeground(int rgb) {
       return ScreenScraper.isAboutSameColor(rgb, foregroundRGB);
     }
-
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage bi = ImageIO.read(new File("C:/dump/a.png"));
-    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.PLAIN, 13), false));
+    BufferedImage bi = ImageIO.read(new File("C:/dump/test.png"));
+    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.BOLD, 7), false));
     System.out.println("done");
   }
 

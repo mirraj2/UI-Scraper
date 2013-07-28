@@ -2,16 +2,16 @@ package scraper.ocr;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,19 +39,16 @@ public class OCRFont {
   }
 
   private OCRFont(Font font, boolean antialias) {
-    BufferedImage bi =
-        new BufferedImage((int) (font.getSize() * 1.5), (int) (font.getSize() * 1.5),
-            BufferedImage.TYPE_INT_ARGB);
-    Graphics gg = bi.getGraphics();
-    Graphics2D g = (Graphics2D) gg;
-    if (antialias) {
-      g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    } else {
-      g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-    }
-    g.setFont(font);
+    Display display = Display.getCurrent();
+    int h = (int) (font.getSize() * 1.5);
+    int w = h * 2;
+    Image im = new Image(display, w, h);
+    GC g = new GC(im);
+    g.setAdvanced(true);
+    g.setTextAntialias(antialias ? SWT.ON : SWT.OFF);
+    int style = font.isBold() ? SWT.BOLD : SWT.NORMAL;
+    g.setFont(new org.eclipse.swt.graphics.Font(display, font.getName(), font
+        .getSize(), style));
 
     final List<Character> supportedCharacters = Lists.newArrayList();
 
@@ -87,14 +84,23 @@ public class OCRFont {
       glyphs.add("" + c);
     }
 
+    Img img = Img.wrap(im);
+
     for (String c : glyphs) {
 
-      g.setColor(Color.white);
-      g.fillRect(0, 0, bi.getWidth(), bi.getHeight());
-      g.setColor(Color.black);
-      g.drawString(c, 0, g.getFontMetrics().getAscent());
+      g.setBackground(new org.eclipse.swt.graphics.Color(null, 255, 255, 255));
+      g.fillRectangle(0, 0, w, h);
+      g.setForeground(new org.eclipse.swt.graphics.Color(null, 0, 0, 0));
+      g.drawString(c, 0, 0);
+      img.reload();
 
-      GlyphShape shape = OCR.generateCharacterShape(c, bi, 0, Color.black, antialias, true);
+      // if (c.equals("F")) {
+      // ImageLoader loader = new ImageLoader();
+      // loader.data = new ImageData[] {im.getImageData()};
+      // loader.save("C:/shit/shit_" + tt++ + ".png", SWT.IMAGE_PNG);
+      // }
+
+      GlyphShape shape = OCR.generateCharacterShape(c, img, 0, Color.black, antialias, true);
       if (shape == null) {
         throw new RuntimeException("Could not generate CharacterShape for character= " + c);
       }
@@ -117,9 +123,12 @@ public class OCRFont {
     }
     if(bestScore > .9){
       logger.debug("returning closest match: " + bestMatch.getValue());
+      logger.debug(shape.getInfoString());
+      logger.debug(bestMatch.getKey().getInfoString());
       return bestMatch.getValue();
     }
-    logger.warn("didn't find a match. best score was: " + bestScore);
+    logger
+        .warn("didn't find a match, best score was: " + bestScore + " \n" + shape.getInfoString());
     return null;
   }
 

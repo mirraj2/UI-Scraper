@@ -37,7 +37,7 @@ public class ScraperUtils {
     long time = System.currentTimeMillis();
     while (true) {
       HumanInteraction.sleep(400);
-      Rectangle loc = scraper.getLocationOf(image, imageArea, matchBlackPixels, debug);
+      Rectangle loc = scraper.getLocationOf(image, imageArea, matchBlackPixels, false);
       if (loc != null) {
         logger.debug("Found image!");
         return loc;
