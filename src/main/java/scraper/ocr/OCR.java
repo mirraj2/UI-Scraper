@@ -5,7 +5,6 @@ import java.awt.Font;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -18,10 +17,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scraper.HumanInteraction;
 import scraper.ScreenScraper;
 
 
@@ -81,15 +82,17 @@ public class OCR {
         }
       }
     } catch (Exception e) {
-      try {
-        ImageIO.write(image, "png", new File("C:\\dump\\" + System.currentTimeMillis() + ".png"));
-      } catch (IOException e1) {
-        e1.printStackTrace();
-      }
-      throw new RuntimeException(e);
+      HumanInteraction.dumpImage(image);
+      throw Throwables.propagate(e);
     }
 
-    return ret.toString();
+    String s = ret.toString();
+
+    if (s.contains("?")) {
+      HumanInteraction.dumpImage(image);
+    }
+
+    return s;
   }
 
   public static GlyphShape generateCharacterShape(String s, Img image, int startingX,
@@ -188,7 +191,7 @@ public class OCR {
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage bi = ImageIO.read(new File("C:/dump/test.png"));
+    BufferedImage bi = ImageIO.read(new File("C:/dump/0.png"));
     System.out.println(OCR.parse(bi, new Font("Tahoma", Font.BOLD, 7), false));
     System.out.println("done");
   }

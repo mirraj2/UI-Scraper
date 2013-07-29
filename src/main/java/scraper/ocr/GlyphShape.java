@@ -133,19 +133,42 @@ public class GlyphShape {
     return s;
   }
 
-  public double getLikenessScore(GlyphShape s) {
-    double score = 0;
+  // HACK HACK! stupid font rendering bullshit
+  private static double checkForOneOffHeight(GlyphShape a, GlyphShape b) {
+    if (a.maxY < b.maxY) {
+      GlyphShape temp = a;
+      a = b;
+      b = temp;
+    }
 
+    // check to see if every pixel in b is in 'a'.
+    Point pp = new Point();
+    for (Point p : b.pixels) {
+      pp.x = p.x;
+      pp.y = p.y + 1;
+      if (!a.pixels.contains(pp)) {
+        return 0;
+      }
+    }
+
+    return .99;
+  }
+
+  public double getLikenessScore(GlyphShape s) {
     int w = s.maxX - s.minX;
     int myW = maxX - minX;
     if (w != myW) {
-      return score;
+      return 0;
     }
 
     int h = s.maxY - s.minY;
     int myH = maxY - minY;
     if (h != myH) {
-      return score;
+      if (Math.abs(h - myH) == 1) {
+        return checkForOneOffHeight(this, s);
+      }
+
+      return 0;
     }
 
     Set<Point> diff = Sets.symmetricDifference(this.pixels, s.pixels);

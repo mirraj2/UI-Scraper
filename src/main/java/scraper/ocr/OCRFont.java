@@ -94,13 +94,16 @@ public class OCRFont {
       g.drawString(c, 0, 0);
       img.reload();
 
-      // if (c.equals("F")) {
+      GlyphShape shape = OCR.generateCharacterShape(c, img, 0, Color.black, antialias, true);
+
+      // if (c.equals("t")) {
+      // System.out.println(shape.getInfoString());
+      //
       // ImageLoader loader = new ImageLoader();
       // loader.data = new ImageData[] {im.getImageData()};
-      // loader.save("C:/shit/shit_" + tt++ + ".png", SWT.IMAGE_PNG);
+      // loader.save("C:/shit/shit.png", SWT.IMAGE_PNG);
       // }
 
-      GlyphShape shape = OCR.generateCharacterShape(c, img, 0, Color.black, antialias, true);
       if (shape == null) {
         throw new RuntimeException("Could not generate CharacterShape for character= " + c);
       }
@@ -121,10 +124,14 @@ public class OCRFont {
         bestMatch = entry;
       }
     }
-    if(bestScore > .9){
-      logger.debug("returning closest match: " + bestMatch.getValue());
-      logger.debug(shape.getInfoString());
-      logger.debug(bestMatch.getKey().getInfoString());
+    if (bestScore > .9) {
+      if (bestScore < .99) {
+        logger.debug("returning closest match: " + bestMatch.getValue());
+        logger.debug(shape.getInfoString());
+        logger.debug(bestMatch.getKey().getInfoString());
+      } else {
+        logger.debug("found offset match for " + bestMatch.getValue());
+      }
       return bestMatch.getValue();
     }
     logger
