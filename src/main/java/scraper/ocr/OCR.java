@@ -32,6 +32,10 @@ public class OCR {
   private static final Logger logger = LoggerFactory.getLogger(OCR.class);
 
   public static String parse(BufferedImage image, Font font, boolean antialias) {
+    return parse(image, font, antialias, 0);
+  }
+
+  public static String parse(BufferedImage image, Font font, boolean antialias, int fontSizeVariance) {
     if (image == null) {
       throw new IllegalArgumentException("image can't be null");
     }
@@ -40,59 +44,67 @@ public class OCR {
     }
 
     List<OCRFont> fonts = Lists.newArrayList();
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i <= fontSizeVariance; i++) {
       fonts.add(OCRFont.create(font.deriveFont(font.getSize2D() - i), antialias));
     }
 
-    Color foregroundColor = getForegroundColor(image);
-
-    StringBuffer ret = new StringBuffer();
-
     try {
-      int lastX = 0;
-      for (int i = 0; i < image.getWidth(); i++) {
-        GlyphShape shape =
-            generateCharacterShape("unknown", Img.wrap(image), i, foregroundColor, antialias,
-                false);
-        if (shape != null) {
+      Map<String, Integer> results = Maps.newHashMap();
 
-          if (ret.length() > 0 && shape.getMinX() - lastX > 3) {
-            ret.append(' ');
-          }
-          lastX = shape.getMaxX();
+      for (OCRFont oFont : fonts) {
+        StringBuffer sb = new StringBuffer();
+        Color foregroundColor = getForegroundColor(image);
+        int numUnrecognized = 0;
+        int lastX = 0;
+        for (int i = 0; i < image.getWidth(); i++) {
+          GlyphShape shape =
+              generateCharacterShape("unknown", Img.wrap(image), i, foregroundColor, antialias,
+                  false);
+          if (shape != null) {
 
-          String letter = null;
-          for (OCRFont f : fonts) {
-            letter = f.getString(shape);
+            if (sb.length() > 0 && shape.getMinX() - lastX > 3) {
+              sb.append(' ');
+            }
+            lastX = shape.getMaxX();
+
+            String letter = oFont.getString(shape, fontSizeVariance == 0);
+
             if (letter != null) {
-              break;
+              if (letter.equals(",") && shape.getMinY() < 5) {
+                letter = "'";
+              }
+              sb.append(letter);
+            } else {
+              numUnrecognized++;
+              sb.append("?");
             }
-          }
 
-          if (letter != null) {
-            if (letter.equals(",") && shape.getMinY() < 5) {
-              letter = "'";
-            }
-            ret.append(letter);
-          } else {
-            ret.append("?");
+            i = shape.getMaxX() + 1;
           }
+        }
 
-          i = shape.getMaxX() + 1;
+        results.put(sb.toString(), numUnrecognized);
+      }
+
+      String bestResult = null;
+      Integer i = null;
+
+      for (Entry<String, Integer> e : results.entrySet()) {
+        if (i == null || e.getValue() < i) {
+          bestResult = e.getKey();
+          i = e.getValue();
         }
       }
+
+      if (i > 0) {
+        HumanInteraction.dumpImage(image);
+      }
+
+      return bestResult;
     } catch (Exception e) {
       HumanInteraction.dumpImage(image);
       throw Throwables.propagate(e);
     }
-
-    String s = ret.toString();
-
-    if (s.contains("?")) {
-      HumanInteraction.dumpImage(image);
-    }
-
-    return s;
   }
 
   public static GlyphShape generateCharacterShape(String s, Img image, int startingX,
@@ -149,7 +161,7 @@ public class OCR {
   private static Color getForegroundColor(BufferedImage bi) {
     Map<Integer, AtomicInteger> counts = Maps.newHashMap();
 
-    int backgroundRGB = bi.getRGB(0, 0);
+    int backgroundRGB = bi.getRGB(bi.getWidth() - 1, 0);
 
     for (int i = 0; i < bi.getWidth(); i++) {
       for (int j = 0; j < bi.getHeight(); j++) {
@@ -191,8 +203,8 @@ public class OCR {
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage bi = ImageIO.read(new File("C:/dump/0.png"));
-    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.BOLD, 7), false));
+    BufferedImage bi = ImageIO.read(new File("F:/shared/1.png"));
+    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.PLAIN, 10), false, 3));
     System.out.println("done");
   }
 

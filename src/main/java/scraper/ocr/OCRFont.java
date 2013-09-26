@@ -40,7 +40,7 @@ public class OCRFont {
 
   private OCRFont(Font font, boolean antialias) {
     Display display = Display.getCurrent();
-    int h = (int) (font.getSize() * 1.5);
+    int h = (int) (font.getSize() * 1.6);
     int w = h * 2;
     Image im = new Image(display, w, h);
     GC g = new GC(im);
@@ -96,12 +96,12 @@ public class OCRFont {
 
       GlyphShape shape = OCR.generateCharacterShape(c, img, 0, Color.black, antialias, true);
 
-      // if (c.equals("t")) {
-      // System.out.println(shape.getInfoString());
+      // if (c.equals("y")) {
+      // System.out.println("** " + shape.getInfoString());
       //
-      // ImageLoader loader = new ImageLoader();
-      // loader.data = new ImageData[] {im.getImageData()};
-      // loader.save("C:/shit/shit.png", SWT.IMAGE_PNG);
+      // // ImageLoader loader = new ImageLoader();
+      // // loader.data = new ImageData[] {im.getImageData()};
+      // // loader.save("C:/shit/shit.png", SWT.IMAGE_PNG);
       // }
 
       if (shape == null) {
@@ -113,7 +113,7 @@ public class OCRFont {
 
   }
 
-  private String getStringByBestMatch(GlyphShape shape) {
+  private String getStringByBestMatch(GlyphShape shape, boolean debug) {
     double bestScore = -1;
     Map.Entry<GlyphShape, String> bestMatch = null;
     for (Map.Entry<GlyphShape, String> entry : shapeToStringMap.entrySet()) {
@@ -125,26 +125,30 @@ public class OCRFont {
       }
     }
     if (bestScore > .9) {
-      if (bestScore < .99) {
-        logger.debug("returning closest match: " + bestMatch.getValue());
-        logger.debug(shape.getInfoString());
-        logger.debug(bestMatch.getKey().getInfoString());
-      } else {
-        logger.debug("found offset match for " + bestMatch.getValue());
+      if (debug) {
+        if (bestScore < .99) {
+          logger.debug("returning closest match: " + bestMatch.getValue());
+          logger.debug(shape.getInfoString());
+          logger.debug(bestMatch.getKey().getInfoString());
+        } else {
+          logger.debug("found offset match for " + bestMatch.getValue());
+        }
       }
       return bestMatch.getValue();
     }
-    logger
-        .warn("didn't find a match, best score was: " + bestScore + " \n" + shape.getInfoString());
+    if (debug) {
+      logger.warn("didn't find a match, best score was: " + bestScore + " \n"
+          + shape.getInfoString());
+    }
     return null;
   }
 
-  public String getString(GlyphShape shape) {
+  public String getString(GlyphShape shape, boolean debug) {
     String ret = shapeToStringMap.get(shape);
     if (ret != null) {
       return ret;
     }
-    return getStringByBestMatch(shape);
+    return getStringByBestMatch(shape, debug);
   }
 
 }
