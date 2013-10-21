@@ -40,7 +40,7 @@ public class OCRFont {
 
   private OCRFont(Font font, boolean antialias) {
     Display display = Display.getCurrent();
-    int h = (int) (font.getSize() * 1.6);
+    int h = (int) (font.getSize() * 2.0);
     int w = h * 2;
     Image im = new Image(display, w, h);
     GC g = new GC(im);
@@ -61,7 +61,7 @@ public class OCRFont {
     for (char c = '0'; c <= '9'; c++) {
       supportedCharacters.add(c);
     }
-    final String s = "()/$,.'-";
+    final String s = "()/$,.'-Æ";
     for (int i = 0; i < s.length(); i++) {
       supportedCharacters.add(s.charAt(i));
     }
@@ -72,6 +72,7 @@ public class OCRFont {
       glyphs.add("tt" + c);
       glyphs.add("ft" + c);
       glyphs.add("ff" + c);
+      glyphs.add("fft" + c);
     }
 
     for (Character c : supportedCharacters) {
@@ -96,7 +97,7 @@ public class OCRFont {
 
       GlyphShape shape = OCR.generateCharacterShape(c, img, 0, Color.black, antialias, true);
 
-      // if (c.equals("y")) {
+      // if (c.equals(",") || c.equals("g")) {
       // System.out.println("** " + shape.getInfoString());
       //
       // // ImageLoader loader = new ImageLoader();

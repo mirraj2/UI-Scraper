@@ -203,8 +203,8 @@ public class OCR {
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage bi = ImageIO.read(new File("F:/shared/1.png"));
-    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.PLAIN, 10), false, 3));
+    BufferedImage bi = ImageIO.read(new File("C:/dump/a.png"));
+    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.BOLD, 10), false, 3));
     System.out.println("done");
   }
 

@@ -48,11 +48,11 @@ public final class HumanInteraction {
   }
 
   public static void main(String[] args) {
-    // for (int i = 0; i < 1000; i++) {
-    // robot.mousePress(InputEvent.BUTTON1_MASK);
-    // robot.mouseRelease(InputEvent.BUTTON1_MASK);
-    // sleep(10);
-    // }
+    for (int i = 0; i < 1000; i++) {
+      robot.mousePress(InputEvent.BUTTON1_MASK);
+      robot.mouseRelease(InputEvent.BUTTON1_MASK);
+      sleep(10);
+    }
   }
 
   public synchronized static void moveMouse(double x, double y) {
@@ -298,17 +298,16 @@ public final class HumanInteraction {
   }
 
   public static void dumpImage(BufferedImage image) {
-    new File("C:/dump/").mkdir();
-    File f = new File("C:/dump/" + (c++) + ".png");
+    File folder = new File("dump/");
+    folder.mkdirs();
+    File ff = new File(folder, (c++) + ".png");
     try {
-      ImageIO.write(image, "png", f);
+      ImageIO.write(image, "png", ff);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static long lastDump = 0;
-  private static int MIN_WAIT_BETWEEN_DUMPS = 5000;
   private static int c = 0;
 
   public static void setBeNiceToUsers(boolean b) {
