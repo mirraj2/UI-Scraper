@@ -8,7 +8,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,6 +19,7 @@ import javax.imageio.ImageIO;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scraper.HumanInteraction;
@@ -32,10 +32,11 @@ public class OCR {
   private static final Logger logger = LoggerFactory.getLogger(OCR.class);
 
   public static String parse(BufferedImage image, Font font, boolean antialias) {
-    return parse(image, font, antialias, 0);
+    return parse(image, font, antialias, 0, null);
   }
 
-  public static String parse(BufferedImage image, Font font, boolean antialias, int fontSizeVariance) {
+  public static String parse(BufferedImage image, Font font, boolean antialias,
+      int fontSizeVariance, Color backgroundColor) {
     if (image == null) {
       throw new IllegalArgumentException("image can't be null");
     }
@@ -53,7 +54,7 @@ public class OCR {
 
       for (OCRFont oFont : fonts) {
         StringBuffer sb = new StringBuffer();
-        Color foregroundColor = getForegroundColor(image);
+        Color foregroundColor = getForegroundColor(image, backgroundColor);
         int numUnrecognized = 0;
         int lastX = 0;
         for (int i = 0; i < image.getWidth(); i++) {
@@ -127,11 +128,16 @@ public class OCR {
 
   private static GlyphShape findShape(String s, Img bi, int startX, int startY,
       ForegroundComparator fgComparator) {
-    Queue<Point> queue = new LinkedList<Point>();
-    Point firstPoint = new Point(startX, startY);
-    queue.add(firstPoint);
-    HashSet<Point> pointsSeen = new HashSet<Point>();
-    pointsSeen.add(firstPoint);
+    Queue<Point> queue = Lists.newLinkedList();
+
+    for (int y = startY; y < bi.getHeight(); y++) {
+      if (fgComparator.isForeground(bi.getRGB(startX, y))) {
+        queue.add(new Point(startX, y));
+      }
+    }
+
+    HashSet<Point> pointsSeen = Sets.newHashSet(queue);
+
     GlyphShape ret = new GlyphShape(s);
     while (!queue.isEmpty()) {
       Point p = queue.poll();
@@ -158,10 +164,11 @@ public class OCR {
     return ret;
   }
 
-  private static Color getForegroundColor(BufferedImage bi) {
+  private static Color getForegroundColor(BufferedImage bi, Color backgroundColor) {
     Map<Integer, AtomicInteger> counts = Maps.newHashMap();
 
-    int backgroundRGB = bi.getRGB(bi.getWidth() - 1, 0);
+    int backgroundRGB =
+        backgroundColor == null ? bi.getRGB(bi.getWidth() - 1, 0) : backgroundColor.getRGB();
 
     for (int i = 0; i < bi.getWidth(); i++) {
       for (int j = 0; j < bi.getHeight(); j++) {
@@ -203,8 +210,8 @@ public class OCR {
   }
 
   public static void main(String[] args) throws Exception {
-    BufferedImage bi = ImageIO.read(new File("C:/dump/a.png"));
-    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.BOLD, 10), false, 3));
+    BufferedImage bi = ImageIO.read(new File("C:/dump/b.png"));
+    System.out.println(OCR.parse(bi, new Font("Tahoma", Font.PLAIN, 10), false, 3, Color.black));
     System.out.println("done");
   }
 
